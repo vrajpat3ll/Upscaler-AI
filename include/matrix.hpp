@@ -45,8 +45,8 @@ class matrix {
     /// Fills the matrix with the specified value
     /// @param val The value to fill the matrix with.
     void fill(T val);
-    int getRows() { return m_rows; }
-    int getCols() { return m_cols; }
+    int getRows() const { return m_rows; }
+    int getCols() const { return m_cols; }
 
     /// @param i th row
     /// @param j th column
@@ -65,7 +65,7 @@ class matrix {
 };
 
 template <typename T>
-matrix<T> mat_row(matrix<T>& m, int row) {
+matrix<T> mat_row(const matrix<T>& m, int row) {
     return matrix<T>(1, m.getCols(), m.getCols(), &m.value(row, 0));
 }
 template <typename T>

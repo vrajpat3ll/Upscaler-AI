@@ -5,13 +5,13 @@
 #define MATRIX_IMPLEMENTATION
 #include "matrix.hpp"
 
-#define NN_INPUT(nn) (nn).activations[0]
-#define NN_OUTPUT(nn) (nn).activations[(nn).count]
-
 namespace functions {
 
 float sigmoidf(float x) {
     return 1.f / (1 + exp(-x));
+}
+float ReLU(float x) {
+    return ((x > 0) ? x : 0);
 }
 }  // namespace functions
 
@@ -29,7 +29,7 @@ class NeuralNetwork {
     /// @param trainingInput input data
     /// @param trainingOutput output data
     /// @return J ( Theta )
-    float cost(matrix<> trainingInput, matrix<> trainingOutput);
+    float cost(const matrix<> &trainingInput, const matrix<> &trainingOutput);
 
     /// @return a reference to the input matrix
     matrix<> &input() { return this->activations[0]; }
@@ -40,16 +40,16 @@ class NeuralNetwork {
     /// @brief initialize the neural network.
     /// First element must contain the number of inputs.
     /// @param architecture a vector containing the number of neurons in each layer.
-    void init(std::vector<int> architecture);
+    void init(const std::vector<int> &architecture);
 
     /// @brief Adjusts the NeuralNetwork to better-fit the data
     /// @param gradient a neural network containing the difference to be made for
     /// each neuron in the NeuralNetwork
     /// @param rate Rate of learning
-    void learn(NeuralNetwork gradient /*difference*/, float rate);
+    void learn(NeuralNetwork &gradient /*difference*/, float rate);
 
     void print(const std::string &name);
-    void randomise(float low, float high);
+    void randomise(const float &low, const float &high);
 
     /// @brief forwards the input and stores the output in
     /// this -> output( )
@@ -59,7 +59,7 @@ class NeuralNetwork {
     /// @param eps epsilon/ delta/
     /// @param trainingInput input data
     /// @param trainingOutput output data
-    void finite_diff(NeuralNetwork g, float eps, matrix<> trainingInput, matrix<> trainingOutput);
+    void finite_diff(NeuralNetwork &g, const float &eps, const matrix<> &trainingInput, const matrix<> &trainingOutput);
 
     // TODO: implement void backprop();
 };
@@ -69,7 +69,7 @@ class NeuralNetwork {
 #ifndef NN_IMPLMENTATION
 #define NN_IMPLMENTATION
 
-void NeuralNetwork::init(std::vector<int> architecture) {
+void NeuralNetwork::init(const std::vector<int> &architecture) {
     //? subtract 1 as 1st layer is input
     this->count = architecture.size() - 1;
 
@@ -97,7 +97,7 @@ void NeuralNetwork::print(const std::string &name) {
     std::cout << "]\n";
 }
 
-void NeuralNetwork::randomise(float low, float high) {
+void NeuralNetwork::randomise(const float &low, const float &high) {
     for (int i = 0; i < this->count; i++) {
         this->weights[i].randomise(low, high);
         this->biases[i].randomise(low, high);
@@ -112,7 +112,7 @@ void NeuralNetwork::forward() {
     }
 }
 
-float NeuralNetwork::cost(matrix<> trainingInput, matrix<> trainingOutput) {
+float NeuralNetwork::cost(const matrix<> &trainingInput, const matrix<> &trainingOutput) {
     if (trainingInput.getRows() != trainingOutput.getRows()) {
         fprintf(stderr, "\e[31m<Cost function> Input and Output's rows do not match!\e[0m");
         exit(1);
@@ -140,7 +140,7 @@ float NeuralNetwork::cost(matrix<> trainingInput, matrix<> trainingOutput) {
     return cost / (2 * n);  //? dividing by 2 just bcoz of convention
 }
 
-void NeuralNetwork::finite_diff(NeuralNetwork g, float eps, matrix<> ti, matrix<> to) {
+void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, const matrix<> &ti, const matrix<> &to) {
     float saved;
     float c = cost(ti, to);
 
@@ -171,7 +171,7 @@ void NeuralNetwork::finite_diff(NeuralNetwork g, float eps, matrix<> ti, matrix<
     }
 }
 
-void NeuralNetwork::learn(NeuralNetwork g, float rate) {
+void NeuralNetwork::learn(NeuralNetwork &g, float rate) {
     for (int i = 0; i < this->count; i++) {
         for (int j = 0; j < this->weights[i].getRows(); j++) {
             for (int k = 0; k < this->weights[i].getCols(); k++) {
