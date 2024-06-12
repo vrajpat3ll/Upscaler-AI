@@ -24,8 +24,7 @@ float rand_float() {
 }
 }  // namespace functions
 
-template <typename T = float,
-          typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+template <typename T = float>
 class matrix {
    private:
     // standard stuff!
