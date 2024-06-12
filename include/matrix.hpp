@@ -5,9 +5,9 @@
  * This is a stb-style header file.
  * Meaning, it contains declaration as well as implementation
  * of the respective members.
- * Also, I have only added limited functionality, like
- * addition and multiplication (basic).
- * And the `randomise` function to, well fill arbitrary
+ * Functionalities:
+ * Addition, Apply a function, Copy, Fill, Multiplication, Print, Randomisation,
+ * The `randomise` function, well fills arbitrary
  * junk values in it.
  *
  */
@@ -31,7 +31,7 @@ class matrix {
     int m_cols;
     int m_rows;
     int m_stride;
-    T* vals;
+    T* m_vals;
 
    public:
     matrix();
@@ -50,8 +50,8 @@ class matrix {
 
     /// @param i th row
     /// @param j th column
-    /// @return reference to the value at `vals [ i ] [ j ]`
-    T& value(int i, int j) { return ((this)->vals)[(i) * this->m_stride + j]; }
+    /// @return reference to the value at `m_vals [ i ] [ j ]`
+    T& value(int i, int j) { return ((this)->m_vals)[(i) * this->m_stride + j]; }
 
     /// @brief Don't use this function if you do not want a custom name.
     /// Instead use the MATRIX_PRINT macro.
@@ -78,31 +78,25 @@ void mat_sum(matrix<T>& dst, matrix<T>& a, matrix<T>& b);
 #ifdef MATRIX_IMPLEMENTATION
 
 template <typename T>
-matrix<T>::matrix() {
-    this->m_rows = 1;
-    this->m_cols = 1;
-    this->m_stride = 1;
-    this->vals = (T*)malloc(m_rows * m_cols * sizeof(T));
-    if (this->vals == NULL) {
+matrix<T>::matrix() : m_rows(1), m_cols(1), m_stride(1) {
+    this->m_vals = (T*)malloc(m_rows * m_cols * sizeof(T));
+    if (this->m_vals == NULL) {
         fprintf(stderr, "\e[31m<Constructor> Could not allocate memory!\e[0m");
         exit(1);
     }
 }
 
 template <typename T>
-matrix<T>::matrix(int r, int c) {
-    this->m_rows = r;
-    this->m_cols = c;
-    this->m_stride = c;
-    this->vals = (T*)calloc(m_rows * m_cols, sizeof(T));
-    if (this->vals == NULL) {
+matrix<T>::matrix(int r, int c) : m_rows(r), m_cols(c), m_stride(c) {
+    this->m_vals = (T*)calloc(m_rows * m_cols, sizeof(T));
+    if (this->m_vals == NULL) {
         fprintf(stderr, "\e[31m<Constructor> Could not allocate memory!\e[0m");
         exit(1);
     }
 }
 
 template <typename T>
-matrix<T>::matrix(int r, int c, int s, T* v) : m_rows(r), m_cols(c), m_stride(s), vals(v) {}
+matrix<T>::matrix(int r, int c, int s, T* v) : m_rows(r), m_cols(c), m_stride(s), m_vals(v) {}
 
 template <typename T>
 void matrix<T>::apply(T (*f)(T x)) {
