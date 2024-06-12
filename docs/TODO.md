@@ -2,6 +2,7 @@
 
 - Write a class for Neural Networks that can be scaled as much as we want to. 
 - implement backpropagation.
+- check the NeuralNetwork::cost() method, `nn.input()` is not restored at the end.
 
 > Check for memory leaks/ allocation of memory where it is not expected to be allocated in the [`matrix.hpp`](./include/matrix.hpp) file.
 

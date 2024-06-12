@@ -1,16 +1,17 @@
 # Upscaler - AI
 
 ## Target
-This repo will contain all the code as well as the binary to upscale any grayscale image upto any dimensions.
+- Make a program that can upscale any image (grayscale for now) upto any dimensions.
+- Learn Machine Learning and GUI development along with this.
 
 ## Plan
 
-- All the design decisions are [linked here](./DESIGN%20CHOICES.md)
-- Progress of the project is [listed here](./PROGRESS.md).
+- All the design decisions are [linked here](./docs/DESIGN%20CHOICES.md)
+- Progress of the project is [listed here](./docs/PROGRESS.md).
 
 ## Courtesy
 
-Thanks to [Alexey Kutepov](https://github.com/rexim) for a wonderful journey of Machine Learning (I think I am a bit late to have discovered him).
+Thanks to Alexey Kutepov for this idea and a wonderful journey of Machine Learning.
 
 ## Contributors
 
