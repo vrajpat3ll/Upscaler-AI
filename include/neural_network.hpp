@@ -29,7 +29,7 @@ class NeuralNetwork {
     /// @param trainingInput input data
     /// @param trainingOutput output data
     /// @return J ( Theta )
-    float cost(const matrix<> &trainingInput, const matrix<> &trainingOutput);
+    float cost(matrix<> &trainingInput, matrix<> &trainingOutput);
 
     /// @return a reference to the input matrix
     matrix<> &input() { return this->activations[0]; }
@@ -59,7 +59,7 @@ class NeuralNetwork {
     /// @param eps epsilon/ delta/
     /// @param trainingInput input data
     /// @param trainingOutput output data
-    void finite_diff(NeuralNetwork &g, const float &eps, const matrix<> &trainingInput, const matrix<> &trainingOutput);
+    void finite_diff(NeuralNetwork &g, const float &eps, matrix<> &trainingInput, matrix<> &trainingOutput);
 
     // TODO: implement void backprop();
 };
@@ -112,7 +112,7 @@ void NeuralNetwork::forward() {
     }
 }
 
-float NeuralNetwork::cost(const matrix<> &trainingInput, const matrix<> &trainingOutput) {
+float NeuralNetwork::cost(matrix<> &trainingInput, matrix<> &trainingOutput) {
     if (trainingInput.getRows() != trainingOutput.getRows()) {
         fprintf(stderr, "\e[31m<Cost function> Input and Output's rows do not match!\e[0m");
         exit(1);
@@ -140,7 +140,7 @@ float NeuralNetwork::cost(const matrix<> &trainingInput, const matrix<> &trainin
     return cost / (2 * n);  //? dividing by 2 just bcoz of convention
 }
 
-void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, const matrix<> &ti, const matrix<> &to) {
+void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, matrix<> &ti, matrix<> &to) {
     float saved;
     float c = cost(ti, to);
 

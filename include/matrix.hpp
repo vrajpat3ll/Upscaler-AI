@@ -42,30 +42,31 @@ class matrix {
     /// @param f The function to apply to each element of the matrix.
     void apply(T (*f)(T x));
 
+    /// @brief `dst`.copy(`src`)
+    /// @tparam T float, double, int
+    /// @param src source matrix
+    void copy(matrix<T> src);
+    
     /// Fills the matrix with the specified value
     /// @param val The value to fill the matrix with.
     void fill(T val);
+    
     int getRows() const { return m_rows; }
     int getCols() const { return m_cols; }
 
     /// @param i th row
     /// @param j th column
     /// @return reference to the value at `m_vals [ i ] [ j ]`
-    T& value(int i, int j) { return ((this)->m_vals)[(i) * this->m_stride + j]; }
-
+    T& value(int i, int j);
     /// @brief Don't use this function if you do not want a custom name.
     /// Instead use the MATRIX_PRINT macro.
     void print(const std::string& name, int spacing);
 
-    /// @brief `dst`.copy(`src`)
-    /// @tparam T float, double, int
-    /// @param src source matrix
-    void copy(matrix<T> src);
     void randomise(T low, T high);
 };
 
 template <typename T>
-matrix<T> mat_row(const matrix<T>& m, int row) {
+matrix<T> mat_row(matrix<T>& m, int row) {
     return matrix<T>(1, m.getCols(), m.getCols(), &m.value(row, 0));
 }
 template <typename T>
@@ -165,6 +166,19 @@ void mat_dot(matrix<T>& dst, matrix<T>& a, matrix<T>& b) {
             }
         }
     }
+}
+
+template <typename T>
+T& matrix<T>::value(int i, int j) {
+    if (i >= this->m_rows) {
+        fprintf(stderr, "\e[31m<Index Error> out of bound rows!\e[0m\n");
+        exit(1);
+    }
+    if (j >= this->m_cols) {
+        fprintf(stderr, "\e[31m<Index Error> out of bound cols!\e[0m\n");
+        exit(1);
+    }
+    return ((this)->m_vals)[(i) * this->m_stride + j];
 }
 
 template <typename T>
