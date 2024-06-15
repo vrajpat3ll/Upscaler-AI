@@ -73,6 +73,8 @@ template <typename T>
 void mat_dot(matrix<T>& dst, matrix<T>& a, matrix<T>& b);
 template <typename T>
 void mat_sum(matrix<T>& dst, matrix<T>& a, matrix<T>& b);
+template <typename T>
+void mat_save(FILE* out, matrix<T>& src, matrix<T>& b);
 
 #endif  // MATRIX_H
 
@@ -142,6 +144,11 @@ void mat_sum(matrix<T>& dst, matrix<T>& a, matrix<T>& b) {
         }
     }
 }
+// TODO: mat_save()
+// template <typename T>
+// void mat_save(FILE* out, matrix<T>& src, matrix<T>& b) {
+
+// }
 
 template <typename T>
 void mat_dot(matrix<T>& dst, matrix<T>& a, matrix<T>& b) {
