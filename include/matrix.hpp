@@ -28,9 +28,9 @@ template <typename T = float>
 class matrix {
    private:
     // standard stuff!
-    int m_cols;
-    int m_rows;
-    int m_stride;
+    int m_cols = 1;
+    int m_rows = 1;
+    int m_stride = 1;
     T* m_vals;
 
    public:
@@ -46,11 +46,11 @@ class matrix {
     /// @tparam T float, double, int
     /// @param src source matrix
     void copy(matrix<T> src);
-    
+
     /// Fills the matrix with the specified value
     /// @param val The value to fill the matrix with.
     void fill(T val);
-    
+
     int getRows() const { return m_rows; }
     int getCols() const { return m_cols; }
 
@@ -160,10 +160,11 @@ void mat_dot(matrix<T>& dst, matrix<T>& a, matrix<T>& b) {
 
     for (int i = 0; i < a.getRows(); i++) {
         for (int j = 0; j < b.getCols(); j++) {
-            dst.value(i, j) = 0;
+            T sum = 0;
             for (int k = 0; k < a.getCols(); k++) {
-                dst.value(i, j) += a.value(i, k) * b.value(k, j);
+                sum += a.value(i, k) * b.value(k, j);
             }
+            dst.value(i, j) = sum;
         }
     }
 }

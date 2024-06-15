@@ -17,9 +17,9 @@ float ReLU(float x) {
 
 class NeuralNetwork {
    private:
-    //? <> means default parameters
     int count;
-    float (*activation_function)(float x) = functions::sigmoidf;  // sigmoid by default
+    std::vector<float (*)(float)> activation_functions;
+    //? <> means default parameters
     std::vector<matrix<>> weights;
     std::vector<matrix<>> biases;
     std::vector<matrix<>> activations;  // count + 1 activations
@@ -40,7 +40,7 @@ class NeuralNetwork {
     /// @brief initialize the neural network.
     /// First element must contain the number of inputs.
     /// @param architecture a vector containing the number of neurons in each layer.
-    void init(const std::vector<int> &architecture);
+    void init(const std::vector<int> &architecture, const std::vector<float (*)(float)> &activation_functions);
 
     /// @brief Adjusts the NeuralNetwork to better-fit the data
     /// @param gradient a neural network containing the difference to be made for
@@ -69,21 +69,32 @@ class NeuralNetwork {
 #ifndef NN_IMPLMENTATION
 #define NN_IMPLMENTATION
 
-void NeuralNetwork::init(const std::vector<int> &architecture) {
+void NeuralNetwork::init(const std::vector<int> &architecture, const std::vector<float (*)(float)> &activation_functions) {
     //? subtract 1 as 1st layer is input
     this->count = architecture.size() - 1;
+    bool no_activation_functions = (activation_functions.size() == 0);
+    if(no_activation_functions) goto label;
 
+    if (this->count != activation_functions.size()) {
+        fprintf(stderr, "\e[31m<Neural Network Init> The number of layers and the number of activation functions are not the same!\e[0m\n");
+        exit(1);
+    }
+label:
     this->weights = std::vector<matrix<>>(this->count);
     this->biases = std::vector<matrix<>>(this->count);
     this->activations = std::vector<matrix<>>(this->count + 1);
+    this->activation_functions = std::vector<float (*)(float)>(this->count, functions::sigmoidf);
 
     this->activations[0] = matrix<>(1, architecture[0]);
-    this->activation_function = functions::sigmoidf;
     for (int i = 1; i <= this->count; i++) {
         this->weights[i - 1] = matrix(this->activations[i - 1].getCols(), architecture[i]);
         this->biases[i - 1] = matrix(1, architecture[i]);
         this->activations[i] = matrix(1, architecture[i]);
     }
+    if (no_activation_functions) goto end;
+
+    std::copy(activation_functions.begin(), activation_functions.end(), this->activation_functions.begin());
+end:;
 }
 
 void NeuralNetwork::print(const std::string &name) {
@@ -108,7 +119,7 @@ void NeuralNetwork::forward() {
     for (int i = 0; i < this->count; i++) {
         mat_dot(this->activations[i + 1], this->activations[i], this->weights[i]);
         mat_sum(this->activations[i + 1], this->activations[i + 1], this->biases[i]);
-        this->activations[i + 1].apply(this->activation_function);
+        this->activations[i + 1].apply(this->activation_functions[i]);
     }
 }
 

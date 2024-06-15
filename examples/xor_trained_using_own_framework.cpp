@@ -8,7 +8,21 @@ float train_xor[]=
     1, 0, 1,
     1, 1, 0,
 };
-float *trainingData = train_xor;
+float train_or[]=
+{
+    0, 0, 0,
+    0, 1, 1,
+    1, 0, 1,
+    1, 1, 1,
+};
+float train_and[]=
+{
+    0, 0, 0,
+    0, 1, 0,
+    1, 0, 0,
+    1, 1, 1,
+};
+float *trainingData = train_or;
 
 int NSamples = 12 / 3;
 
@@ -16,8 +30,9 @@ int main() {
     srand(time(0));
     NeuralNetwork nn, g;
     vector<int> arch = {2, 2, 1};
-    nn.init(arch);
-    g.init(arch);
+    vector<float(*)(float)> funcs = {functions::ReLU, functions::sigmoidf};
+    nn.init(arch, funcs);
+    g.init(arch, funcs);
     nn.randomise(0, 1);
 
     matrix<> ti = matrix<>(NSamples, 2, 3, trainingData);
