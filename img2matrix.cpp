@@ -54,7 +54,12 @@ int main(int argc, char **argv) {
             training_data.value(i, 0) = normalized_x;
             training_data.value(i, 1) = normalized_y;
             training_data.value(i, 2) = normalized_brightness;
+            // if ((int)img_pixels[i] == 0)
+            //     cout << setw(3) << " " << ' ';
+            // else
+            //     cout << setw(3) << (int)img_pixels[i] << ' ';
         }
+        // cout << '\n';
     }
     MATRIX_PRINT(training_data);
     // const char *out_file_path = "img.mat";

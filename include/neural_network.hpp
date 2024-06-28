@@ -13,6 +13,46 @@ float sigmoidf(float x) {
 float ReLU(float x) {
     return ((x > 0) ? x : 0);
 }
+void SoftMax(matrix<> &m) {
+    if (m.getCols() != 1 && m.getRows() != 1) {
+        fprintf(stderr, "\e[31m<SoftMax function> Not a row or column matrix!\e[0m\n");
+        exit(1);
+    }
+    float sum = 0;
+    for (int i = 0; i < m.getRows(); i++) {
+        for (int j = 0; j < m.getCols(); j++) {
+            m.value(i, j) = expf(m.value(i, j));
+            sum += m.value(i, j);
+        }
+    }
+    for (int i = 0; i < m.getRows(); i++) {
+        for (int j = 0; j < m.getCols(); j++) {
+            m.value(i, j) /= sum;
+        }
+    }
+}
+
+int ArgMax(matrix<> &m) {
+    if (m.getCols() != 1 && m.getRows() != 1) {
+        fprintf(stderr, "\e[31m<SoftMax function> Not a row or column matrix!\e[0m\n");
+        exit(1);
+    }
+    int ans = 0;
+    if (m.getCols() == 1) {
+        for (int i = 0; i < m.getRows(); i++) {
+            if (m.value(ans, 0) < m.value(i, 0)) ans = i;
+        }
+        return ans;
+    }
+    if (m.getRows() == 1) {
+        for (int i = 0; i < m.getCols(); i++) {
+            if (m.value(0, ans) < m.value(0, i)) ans = i;
+        }
+        return ans;
+    }
+    return 0;
+}
+
 }  // namespace functions
 
 class NeuralNetwork {
@@ -73,7 +113,7 @@ void NeuralNetwork::init(const std::vector<int> &architecture, const std::vector
     //? subtract 1 as 1st layer is input
     this->count = architecture.size() - 1;
     bool no_activation_functions = (activation_functions.size() == 0);
-    if(no_activation_functions) goto label;
+    if (no_activation_functions) goto label;
 
     if (this->count != activation_functions.size()) {
         fprintf(stderr, "\e[31m<Neural Network Init> The number of layers and the number of activation functions are not the same!\e[0m\n");
@@ -129,7 +169,7 @@ float NeuralNetwork::cost(matrix<> &trainingInput, matrix<> &trainingOutput) {
         exit(1);
     }
     if (trainingOutput.getCols() != this->output().getCols()) {
-        fprintf(stderr, "\e[31m<Cost function> Output and Output matrix's do not match!\e[0m");
+        fprintf(stderr, "\e[31m<Cost function> Output and Output matrix's cols do not match!\e[0m");
         exit(1);
     }
     auto save = this->input();
