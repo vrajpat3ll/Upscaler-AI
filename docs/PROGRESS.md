@@ -14,3 +14,7 @@
     1. implemented finite difference method
 
 1. Demonstrated learning xor.
+
+1. Added GUI using [raylib](https://github.com/raysan5/raylib) to show neural networks.
+
+## July, 2024
