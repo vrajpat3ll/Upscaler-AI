@@ -20,7 +20,9 @@ set raylibInclude=-IC:/addtional-libs/raylib-5.0_win64_mingw-w64/include/ -LC:/a
 @REM  for GUI...  raylib
 @REM %COMPILER% %CFLAGS% "./examples/GUI.cpp" %CLIBS% -o "./builds/gui" %raylibInclude%
 @REM "./builds/gui"
-@REM %COMPILER% %CFLAGS% "./gym.cpp" %CLIBS% -o "./builds/gym" %raylibInclude%
-@REM "./builds/gym"
-%COMPILER% %CFLAGS% "./examples/xor_gym.cpp" %CLIBS% -o "./builds/xor_gym" %raylibInclude%
-"./builds/xor_gym"
+
+%COMPILER% %CFLAGS% "./gym.cpp" %CLIBS% -o "./gym" %raylibInclude%
+"./gym" "./network.arch"   "./layers.functions"
+
+@REM %COMPILER% %CFLAGS% "./examples/xor_gym.cpp" %CLIBS% -o "./builds/xor_gym" %raylibInclude%
+@REM "./builds/xor_gym"

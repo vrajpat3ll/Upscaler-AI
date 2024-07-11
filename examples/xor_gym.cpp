@@ -7,18 +7,14 @@ using namespace std;
 const int screenWidth = 16 * 100;
 const int screenHeight = 10 * 100;
 
-void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int epoch, int epochs) {
+void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch) {
     Color backgorundColor = {0x16, 0x16, 0x16, 0xFF};  // greyish
     Color lowColor = {0xFF, 0x00, 0xFF, 0x00};
     Color highColor = {0x00, 0xFF, 0x00, 0x00};
     Color neuronColor = RED;
     Color connectionColor = GREEN;
 
-    string epoc = "epoch: " + to_string(epoch) + " / " + to_string(epochs);
-    DrawText(epoc.c_str(), 0, 0, 18, WHITE);
-
-    string fps = "FPS: " + to_string(GetFPS());
-    DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
+   
 
     float neuronRadius = 020;
     int layer_border_vpad = 50;
@@ -102,7 +98,13 @@ int main() {
             i++;
         }
         BeginDrawing();
-        NN_render_raylib(nn, arch, i, epochs);
+        NN_render_raylib(nn, arch);
+        {
+        string epoc = "epoch: " + to_string(i) + " / " + to_string(epochs);
+        DrawText(epoc.c_str(), 0, 0, 18, WHITE);
+        string fps = "FPS: " + to_string(GetFPS());
+        DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
+        }
         EndDrawing();
     }
     CloseWindow();
