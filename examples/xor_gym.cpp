@@ -90,20 +90,21 @@ int main() {
     const float eps = 1e-1;
     const float rate = 1e-1;
     const int epochs = 20 * 1000;
-    int i = 0;
+    int i = 1;
     while (!WindowShouldClose()) {
-        if (i < epochs) {
+        if (i <= epochs) {
+            i++;
             nn.finite_diff(g, eps, ti, to);
             nn.learn(g, rate);
-            i++;
+            if (i % 100 == 0) std::cout << "\e[18;1H" << i << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
         }
         BeginDrawing();
         NN_render_raylib(nn, arch);
         {
-        string epoc = "epoch: " + to_string(i) + " / " + to_string(epochs);
-        DrawText(epoc.c_str(), 0, 0, 18, WHITE);
-        string fps = "FPS: " + to_string(GetFPS());
-        DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
+            string epoc = "epoch: " + to_string(i) + " / " + to_string(epochs);
+            DrawText(epoc.c_str(), 0, 0, 18, WHITE);
+            string fps = "FPS: " + to_string(GetFPS());
+            DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
         }
         EndDrawing();
     }

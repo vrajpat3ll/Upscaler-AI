@@ -9,8 +9,22 @@
 using namespace functions;
 using namespace std;
 
-#define PRINT_FILES
+float train_xor[] = {
+    0, 0, 0,
+    0, 1, 1,
+    1, 0, 1,
+    1, 1, 0,
+};
+float *trainingData = train_xor;
 
+int NSamples = 12 / 3;
+// matrix<> ti = matrix<>(NSamples, 2, 3, trainingData);
+// matrix<> to = matrix<>(NSamples, 1, 3, trainingData + 2);
+
+#define PRINT_FILES
+#define RATE 1e-1
+#define EPSILLON 1e-1
+#define EPOCHS 20 * 1000
 const int screenWidth = 16 * 100;
 const int screenHeight = 10 * 100;
 
@@ -35,7 +49,7 @@ vector<float (*)(float)> parseActivationFunctions(string filepath) {
     }
 
     file.close();
-    cout << "Activation functions parsed successfully" << endl;
+    cout << "\e[32mActivation functions parsed successfully\e[0m" << endl;
     return activationFunctions;
 }
 
@@ -53,13 +67,13 @@ vector<int> parseArchitecture(string filepath) {
     }
 
     file.close();
-    cout << "Architecture parsed successfully" << endl;
+    cout << "\e[32mArchitecture parsed successfully\e[0m" << endl;
     return architecture;
 }
 };  // namespace parse
 
 void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch) {
-    Color backgorundColor = {0x18, 0x18, 0x18, 0xFF};  // greyish
+    Color backgroundColor = {0x18, 0x18, 0x18, 0xFF};  // greyish
     Color lowColor = {0xFF, 0x00, 0xFF, 0x00};
     Color highColor = {0x00, 0xFF, 0x00, 0x00};
     Color neuronColor = RED;
@@ -89,28 +103,88 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch) {
             DrawCircle(cx1, cy1, neuronRadius, neuronColor);
         }
     }
-    ClearBackground(backgorundColor);
+    ClearBackground(backgroundColor);
+}
+
+// need to write own validate for each problem
+void validate(NeuralNetwork &nn, matrix<> &ti, matrix<> &to) {
+    int cnt = 0;
+    for (int i = 0; i < ti.getRows(); i++) {
+        nn.input() = mat_row(ti, i);
+        nn.forward();
+        matrix<> output = nn.output();
+        std::cout << ti.value(i, 0) << " ^ " << ti.value(i, 1) << " = " << nn.output().value(0, 0) << endl;
+        output.apply(round);
+        matrix<> expected = mat_row(to, i);
+        if (output == expected) cnt++;
+    }
+
+    float accuracy = (float)cnt / ti.getRows() * 100;
+    std::cout << "accuracy: " << accuracy << "%" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout << "\e[31m<exe input> Usage: gym ";
+        cout << "\e[31mUsage: gym ";
         cout << "<filepath to architecture> ";
         cout << "<filepath to activation functions>\e[0m";
         return -1;
     }
 
     vector<int> arch = parse::parseArchitecture(argv[1]);
-    // vector<int> arch = parse::parseArchitecture("c:/coding/code/projects/c-c++/upscaler-ai/upscaler-ai/network.arch");
+
+    if (arch.size() < 3) {
+        fprintf(stderr, "\e[31m<GYM> Architecture does not contain hidden layers?\n\e[0m");
+        return 1;
+    }
     vector<float (*)(float)> acFs;
     if (argc < 3) {
         acFs = {};
-    } else
+    } else {
         acFs = parse::parseActivationFunctions(argv[2]);
+    }
 
+    std::string inputData ;// = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\ti.mat";
+    std::string outputData;// = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\to.mat";
+    std::cout << "Enter path for input data (.mat format):\n";
+    getline(cin, inputData);
+    ifstream f(inputData);
+    if (!f.is_open()) {
+        fprintf(stderr, "\e[31m<GYM> Could not find input data file!\n\e[0m");
+        return 1;
+    }
+    f.close();
+    std::cout << "Enter path for output data (.mat format):\n";
+    getline(cin, outputData);
+    ifstream file(outputData);
+    if (!file.is_open()) {
+        fprintf(stderr, "\e[31m<GYM> Could not find output data file!\n\e[0m");
+        return 1;
+    }
+    file.close();
+
+    InitWindow(screenWidth, screenHeight, "Training sesh");
+    SetTargetFPS(int(1e6));  // cap fps
+
+    matrix<> ti;// = matrix<>(NSamples, 2, 3, trainingData);
+    matrix<> to;// = matrix<>(NSamples, 1, 3, trainingData + 2);
+    ti.load(inputData);
+    to.load(outputData);
+    if (ti.getRows() != to.getRows()) {
+        fprintf(stderr, "\e[31m<GYM> Number of samples in input and output do not match!\n\e[0m");
+        return 1;
+    }
+    if (ti.getCols() != arch[0]) {
+        fprintf(stderr, "\e[31m<GYM> Number of features in input and architecture do not match!\n\e[0m");
+        return 1;
+    }
+    if (to.getCols() != arch.back()) {
+        fprintf(stderr, "\e[31m<GYM> Number of features in output and architecture do not match!\n\e[0m");
+        return 1;
+    }
 #ifdef PRINT_FILES
     {
-        cout << "Architecture: ";
+        cout << "\nArchitecture: ";
         for (auto x : arch) cout << x << " ";
         cout << endl;
         cout << "Activations: ";
@@ -126,40 +200,39 @@ int main(int argc, char *argv[]) {
         cout << endl;
     }
 #endif
-    InitWindow(screenWidth, screenHeight, "Training sesh");
-    SetTargetFPS(75);  // cap fps
+    MATRIX_PRINT(ti);
+    MATRIX_PRINT(to);
+    srand(time(0));
     NeuralNetwork nn, g;
     nn.init(arch, acFs);
     g.init(arch, acFs);
     nn.randomise(0, 1);
-    float rate = 1;
-    float eps = 1e-1;
-    matrix<> ti;
-    matrix<> to;
+    nn.print("Neural Network");
     int epoch = 1;
-    int epochs = 5 * 1000;
+
     while (!WindowShouldClose()) {
-        // if (epoch <= epochs) {
-        //     nn.finite_diff(g, eps, ti, to);
-        //     nn.learn(g, rate);
-        //     epoch++;
-        // }
-
+        if (epoch <= EPOCHS) {
+            nn.finite_diff(g, EPSILLON, ti, to);
+            nn.learn(g, RATE);
+            if (epoch % 100 == 0) std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
+            epoch++;
+        }
         BeginDrawing();
-
         NN_render_raylib(nn, arch);
         {
-            string epoc = "epoch: " + to_string(epoch) + " / " + to_string(epochs);
+            string epoc = "epoch: " + to_string(epoch) + " / " + to_string(EPOCHS);
             DrawText(epoc.c_str(), 0, 0, 18, WHITE);
             string fps = "FPS: " + to_string(GetFPS());
             DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
         }
-
         EndDrawing();
     }
+    cout << "\e[19;1H";
     CloseWindow();
-
+    cout << "\n";
     nn.print("Neural Network");
+
+    validate(nn, ti, to);
     // nn.save("filename");
     return 0;
 }
