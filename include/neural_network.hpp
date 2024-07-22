@@ -65,6 +65,9 @@ class NeuralNetwork {
     std::vector<matrix<>> activations;  // count + 1 activations
 
    public:
+
+    const float value(const std::string& option, int layer, int row, int col);
+
     /// @brief evaluates the cost / loss function based on the inout and the output
     /// @param trainingInput input data
     /// @param trainingOutput output data
@@ -160,6 +163,56 @@ void NeuralNetwork::forward() {
         mat_dot(this->activations[i + 1], this->activations[i], this->weights[i]);
         mat_sum(this->activations[i + 1], this->activations[i + 1], this->biases[i]);
         this->activations[i + 1].apply(this->activation_functions[i]);
+    }
+}
+
+const float NeuralNetwork::value(const std::string &option, int layer, int row, int col) {
+    if (layer >= count) {
+        fprintf(stderr, "\e[31m<value>Layer index exceeded!\n\e[0m");
+        throw std::runtime_error("\e[31m<value> Layer index exceeded!\n\e[0m");
+    }
+    if (option == "weights"){
+        if(row >= this->weights[layer].getRows()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m");
+        }
+        if(col >= this->weights[layer].getCols()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m");
+        }
+        return this->weights[layer].value(row, col);
+    }
+    else if (option == "biases"){
+        if(row >= this->weights[layer].getRows()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m");
+        }
+        if(col >= this->weights[layer].getCols()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m");
+        }
+        return this->biases[layer].value(row, col);
+    }
+    else if (option == "activations"){
+        if(row >= this->weights[layer].getRows()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m");
+        }
+        if(col >= this->weights[layer].getCols()){ 
+            std::string log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+            fprintf(stderr, log.c_str());
+            throw std::runtime_error("\e[31m<value> Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m");
+        }
+        return this->activations[layer].value(row, col);
+    }
+    else {
+        fprintf(stderr, "\e[31m<value>Wrong option given!\nChoose from \"weights\", \"biases\" and \"activations\"\n\e[0m");
+        throw std::runtime_error("\e[31m<value> Wrong option given!\nChoose from \"weights\", \"biases\" and \"activations\"\n\e[0m");
     }
 }
 

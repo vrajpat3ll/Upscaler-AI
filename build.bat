@@ -21,7 +21,7 @@ set raylibInclude=-IC:/addtional-libs/raylib-5.0_win64_mingw-w64/include/ -LC:/a
 @REM "./builds/gui"
 
 %COMPILER% %CFLAGS% "./gym.cpp" %CLIBS% -o "./gym" %raylibInclude%
-@REM "./gym" "./network.arch"   "./layers.functions"
+"./gym" "./network.arch"   "./layers.functions"
 
 @REM %COMPILER% %CFLAGS% "./examples/xor_gym.cpp" %CLIBS% -o "./builds/xor_gym_new" %raylibInclude%
 @REM "./builds/xor_gym_new"

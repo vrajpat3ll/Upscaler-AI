@@ -9,19 +9,8 @@
 using namespace functions;
 using namespace std;
 
-float train_xor[] = {
-    0, 0, 0,
-    0, 1, 1,
-    1, 0, 1,
-    1, 1, 0,
-};
-float *trainingData = train_xor;
-
-int NSamples = 12 / 3;
-// matrix<> ti = matrix<>(NSamples, 2, 3, trainingData);
-// matrix<> to = matrix<>(NSamples, 1, 3, trainingData + 2);
-
 #define PRINT_FILES
+#define FPS 150
 #define RATE 1e-1
 #define EPSILLON 1e-1
 #define EPOCHS 20 * 1000
@@ -72,21 +61,19 @@ vector<int> parseArchitecture(string filepath) {
 }
 };  // namespace parse
 
-void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch) {
+void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int rx, int ry, int rw, int rh) {
     Color backgroundColor = {0x18, 0x18, 0x18, 0xFF};  // greyish
-    Color lowColor = {0xFF, 0x00, 0xFF, 0x00};
-    Color highColor = {0x00, 0xFF, 0x00, 0x00};
-    Color neuronColor = RED;
-    Color connectionColor = GREEN;
+    Color lowColor = MAROON;
+    Color highColor = DARKBLUE;
 
-    float neuronRadius = 20;
-    int layer_border_vpad = 50;
-    int layer_border_hpad = 50;
-    int nn_width = screenWidth - 2 * layer_border_hpad;
+    float neuronRadius = rh * 0.03;
+    int layer_border_vpad = rh * 0.08;
+    int layer_border_hpad = rw * 0.06;
+    int nn_width = rw - 2 * layer_border_hpad;
     int layer_hpad = nn_width / arch.size();
-    int nn_height = screenHeight - 2 * layer_border_vpad;
-    int nn_x = screenWidth / 2 - nn_width / 2;
-    int nn_y = screenHeight / 2 - nn_height / 2;
+    int nn_height = rh - 2 * layer_border_vpad;
+    int nn_x = rx + rw / 2 - nn_width / 2;
+    int nn_y = ry + rh / 2 - nn_height / 2;
     for (int l = 0; l < arch.size(); l++) {
         int layer_vpad1 = nn_height / (arch[l]);
         for (int j = 0; j < arch[l]; j++) {
@@ -97,10 +84,19 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch) {
                     int layer_vpad2 = nn_height / (arch[l + 1]);
                     int cx2 = nn_x + (l + 1) * layer_hpad + layer_hpad / 2;
                     int cy2 = nn_y + k * layer_vpad2 + layer_vpad2 / 2;
-                    DrawLine(cx1, cy1, cx2, cy2, connectionColor);
+                    Vector2 start = {cx1, cy1};
+                    Vector2 end = {cx2, cy2};
+                    float value = sigmoidf(nn.value("weights", l, j, k));
+                    highColor.a = floorf(255.0F * value);
+                    float thickness = rh * 0.004F;
+                    DrawLineEx(start, end, thickness, ColorAlphaBlend(lowColor, highColor, WHITE));
                 }
             }
-            DrawCircle(cx1, cy1, neuronRadius, neuronColor);
+            if (l > 0) {
+                highColor.a = floor(255.0F * sigmoidf(nn.value("biases", l - 1, 0, j)));
+                DrawCircle(cx1, cy1, neuronRadius, ColorAlphaBlend(lowColor, highColor, WHITE));
+            } else 
+                DrawCircle(cx1, cy1, neuronRadius, GRAY);
         }
     }
     ClearBackground(backgroundColor);
@@ -144,10 +140,10 @@ int main(int argc, char *argv[]) {
         acFs = parse::parseActivationFunctions(argv[2]);
     }
 
-    std::string inputData ;// = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\ti.mat";
-    std::string outputData;// = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\to.mat";
+    std::string inputData  = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\ti.mat";
+    std::string outputData = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\to.mat";
     std::cout << "Enter path for input data (.mat format):\n";
-    getline(cin, inputData);
+    // getline(cin, inputData);
     ifstream f(inputData);
     if (!f.is_open()) {
         fprintf(stderr, "\e[31m<GYM> Could not find input data file!\n\e[0m");
@@ -155,7 +151,7 @@ int main(int argc, char *argv[]) {
     }
     f.close();
     std::cout << "Enter path for output data (.mat format):\n";
-    getline(cin, outputData);
+    // getline(cin, outputData);
     ifstream file(outputData);
     if (!file.is_open()) {
         fprintf(stderr, "\e[31m<GYM> Could not find output data file!\n\e[0m");
@@ -164,10 +160,9 @@ int main(int argc, char *argv[]) {
     file.close();
 
     InitWindow(screenWidth, screenHeight, "Training sesh");
-    SetTargetFPS(int(1e6));  // cap fps
 
-    matrix<> ti;// = matrix<>(NSamples, 2, 3, trainingData);
-    matrix<> to;// = matrix<>(NSamples, 1, 3, trainingData + 2);
+    matrix<> ti;  // = matrix<>(NSamples, 2, 3, trainingData);
+    matrix<> to;  // = matrix<>(NSamples, 1, 3, trainingData + 2);
     ti.load(inputData);
     to.load(outputData);
     if (ti.getRows() != to.getRows()) {
@@ -207,19 +202,26 @@ int main(int argc, char *argv[]) {
     nn.init(arch, acFs);
     g.init(arch, acFs);
     nn.randomise(0, 1);
-    nn.print("Neural Network");
+    // nn.print("Neural Network");
     int epoch = 1;
 
     while (!WindowShouldClose()) {
+ 
         if (epoch <= EPOCHS) {
             nn.finite_diff(g, EPSILLON, ti, to);
             nn.learn(g, RATE);
-            if (epoch % 100 == 0) std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
+            if (epoch % 100 == 0)
+             std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
             epoch++;
         }
         BeginDrawing();
-        NN_render_raylib(nn, arch);
         {
+            int rx, ry, rw, rh;
+            rw = screenWidth / 2;
+            rh = screenHeight * 2 / 3;
+            rx = screenWidth - rw;
+            ry = screenHeight / 2 - rh / 2;
+            NN_render_raylib(nn, arch, rx, ry, rw, rh);
             string epoc = "epoch: " + to_string(epoch) + " / " + to_string(EPOCHS);
             DrawText(epoc.c_str(), 0, 0, 18, WHITE);
             string fps = "FPS: " + to_string(GetFPS());
