@@ -83,7 +83,7 @@ class NeuralNetwork {
     /// @brief initialize the neural network.
     /// First element must contain the number of inputs.
     /// @param architecture a vector containing the number of neurons in each layer.
-    void init(const std::vector<int> &architecture, const std::vector<float (*)(float)> &activation_functions);
+    void init(const std::vector<unsigned> &architecture, const std::vector<float (*)(float)> &activation_functions);
 
     /// @brief Adjusts the NeuralNetwork to better-fit the data
     /// @param gradient a neural network containing the difference to be made for
@@ -112,7 +112,7 @@ class NeuralNetwork {
 #ifndef NN_IMPLMENTATION
 #define NN_IMPLMENTATION
 
-void NeuralNetwork::init(const std::vector<int> &architecture, const std::vector<float (*)(float)> &activation_functions) {
+void NeuralNetwork::init(const std::vector<unsigned> &architecture, const std::vector<float (*)(float)> &activation_functions) {
     //? subtract 1 as 1st layer is input
     this->count = architecture.size() - 1;
     bool no_activation_functions = (activation_functions.size() == 0);
