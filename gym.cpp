@@ -1,6 +1,7 @@
 /**
  * GUI app for training the neural networks.
  * Spit out a binary file which can be parsed to generate the neural network
+ * 
  **/
 #include <bits/stdc++.h>
 
@@ -88,7 +89,7 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int rx, int ry
                     Vector2 end = {cx2, cy2};
                     float value = sigmoidf(nn.value("weights", l, j, k));
                     highColor.a = floorf(255.0F * value);
-                    float thickness = rh * 0.004F;
+                    float thickness = rh * 0.01F * (sigmoidf(abs(nn.value("weights", l, j, k)))-0.35);
                     DrawLineEx(start, end, thickness, ColorAlphaBlend(lowColor, highColor, WHITE));
                 }
             }
@@ -123,7 +124,8 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {
         cout << "\e[31mUsage: gym ";
         cout << "<filepath to architecture> ";
-        cout << "<filepath to activation functions>\e[0m";
+        cout << "<filepath to activation functions> "; 
+        cout << "<filepath to training data> \e[0m";
         return -1;
     }
 
@@ -139,32 +141,37 @@ int main(int argc, char *argv[]) {
     } else {
         acFs = parse::parseActivationFunctions(argv[2]);
     }
-
-    std::string inputData  = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\ti.mat";
-    std::string outputData = "C:\\CODING\\code\\projects\\C-C++\\Upscaler-AI\\Upscaler-AI\\examples\\testing\\save-method\\to.mat";
-    std::cout << "Enter path for input data (.mat format):\n";
-    // getline(cin, inputData);
-    ifstream f(inputData);
+    
+    std::string data;
+    if (argc == 4) {
+        data = argv[3];
+    } else {
+        std::cout << "Enter path for data (.mat format):\n";
+        getline(cin, data);
+    }
+    ifstream f(data);
     if (!f.is_open()) {
-        fprintf(stderr, "\e[31m<GYM> Could not find input data file!\n\e[0m");
+        fprintf(stderr, "\e[31m<GYM> Could not find data file!\n\e[0m");
         return 1;
     }
     f.close();
-    std::cout << "Enter path for output data (.mat format):\n";
-    // getline(cin, outputData);
-    ifstream file(outputData);
-    if (!file.is_open()) {
-        fprintf(stderr, "\e[31m<GYM> Could not find output data file!\n\e[0m");
+    
+    matrix t;
+    t.load(data);
+    if (arch[0] + arch.back() != t.getCols()) {
+        fprintf(stderr, "\e[31m<Check> architecture and data's dimensions do not match!\n"
+                               "architecture[0]    = %d\n"
+                               "architecture[last] = %d\n"
+                               "trainingData.cols  = %d\e[0m", arch[0], arch.back(), t.getCols());
         return 1;
     }
-    file.close();
+    matrix<> ti (t.getRows(), arch[0], t.getCols(), &t.value(0, 0));
+    matrix<> to (t.getRows(), arch.back(), t.getCols(), &t.value(0, arch[0]));
 
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE); // to make the window resize-able
     InitWindow(screenWidth, screenHeight, "Training sesh");
-
-    matrix<> ti;  // = matrix<>(NSamples, 2, 3, trainingData);
-    matrix<> to;  // = matrix<>(NSamples, 1, 3, trainingData + 2);
-    ti.load(inputData);
-    to.load(outputData);
+    SetTargetFPS(75);
+    // I guess these conditions are useless now!
     if (ti.getRows() != to.getRows()) {
         fprintf(stderr, "\e[31m<GYM> Number of samples in input and output do not match!\n\e[0m");
         return 1;
@@ -202,30 +209,43 @@ int main(int argc, char *argv[]) {
     nn.init(arch, acFs);
     g.init(arch, acFs);
     nn.randomise(0, 1);
-    // nn.print("Neural Network");
     int epoch = 1;
 
+    bool pause = true;
     while (!WindowShouldClose()) {
- 
-        if (epoch <= EPOCHS) {
+        
+        if (epoch <= EPOCHS && !pause) {
             nn.finite_diff(g, EPSILLON, ti, to);
             nn.learn(g, RATE);
             if (epoch % 100 == 0)
-             std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
+                std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
             epoch++;
+        }
+        if (IsKeyPressed(KEY_R)) {
+            srand(time(0));
+            nn.randomise(0, 1);
+            epoch = 0;
+        }
+        if (IsKeyPressed(KEY_SPACE)) {
+            pause = !pause;
         }
         BeginDrawing();
         {
             int rx, ry, rw, rh;
-            rw = screenWidth / 2;
-            rh = screenHeight * 2 / 3;
-            rx = screenWidth - rw;
-            ry = screenHeight / 2 - rh / 2;
+            
+            rw = GetScreenWidth() / 2;
+            rh = GetScreenHeight() * 2 / 3;
+            rx = GetScreenWidth() - rw;
+            ry = GetScreenHeight() / 2 - rh / 2;
+
             NN_render_raylib(nn, arch, rx, ry, rw, rh);
+
             string epoc = "epoch: " + to_string(epoch) + " / " + to_string(EPOCHS);
-            DrawText(epoc.c_str(), 0, 0, 18, WHITE);
+            string cost = "cost: " + to_string(nn.cost(ti, to));
+            DrawText(epoc.c_str(), 0, 0, 24, WHITE);
+            DrawText(cost.c_str(), GetScreenWidth() / 2, 0, 24, WHITE);
             string fps = "FPS: " + to_string(GetFPS());
-            DrawText(fps.c_str(), 0.94 * screenWidth, 0, 18, WHITE);
+            DrawText(fps.c_str(), GetScreenWidth() - fps.size() * 13, 0, 24, WHITE);
         }
         EndDrawing();
     }

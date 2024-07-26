@@ -9,11 +9,8 @@ float arr[] = {
 };
 
 int main() {
-    matrix<> ti(4, 2, 3, arr);
-    matrix<> to(4, 1, 3, arr+3);
-    MATRIX_PRINT(ti);
-    MATRIX_PRINT(to);
-    ti.save("ti.mat");
-    to.save("to.mat");
+    matrix<> t(4, 3, 3, arr);
+    MATRIX_PRINT(t);
+    t.save("t.mat");
     return 0;
 }

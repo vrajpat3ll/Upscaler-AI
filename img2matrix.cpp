@@ -3,29 +3,17 @@
 #define MATRIX_IMPLEMENTATION
 #include "matrix.hpp"
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "include/external/stb_image.h"
 using namespace std;
 
-char *args_shift(int &argc, char ***argv) {
-    if (argc <= 0) {
-        exit(1);
-    }
-    char *result = **argv;
-    argc--;
-    (*argv)++;
-    return result;
-}
-
 int main(int argc, char **argv) {
-    char *program = args_shift(argc, &argv);
 
-    if (argc <= 0) {
-        fprintf(stderr, "\e[37mUsage: %s <input.png>\e[0m\n", program);
-        fprintf(stderr, "\e[31mError: No input file provided!\n\e[0m");
+    if (argc <= 1) {
+        fprintf(stderr, "\e[31mUsage: %s <input.png>\n"
+                              "Error: No input file provided!\n\e[0m", argv[0]);
         return 1;
     }
-
-    const char *img_file_path = args_shift(argc, &argv);
+    const char *img_file_path = argv[1];
 
     int img_width;
     int img_height;
@@ -40,7 +28,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "\e[31mError: %s is %d bits images!\nOnly 8 bit grayscale images are supported!\e[0m", img_file_path, img_components * 8);
         return 1;
     }
-    cout << img_file_path << " size " << img_width << "x" << img_height << " " << img_components * 8 << " bits\n";
+    cout << "\e[32m";
+    cout << "[INFO] File path: " << img_file_path << '\n';
+    cout << "[INFO] Size: " << img_width << "x" << img_height << '\n';
+    cout << "[INFO] Bits: " << img_components * 8 << " bits\n\e[0m";
 
     matrix<> training_data(img_width * img_height, 3);  // x, y, intensity
 
@@ -62,11 +53,6 @@ int main(int argc, char **argv) {
         // cout << '\n';
     }
     MATRIX_PRINT(training_data);
-    // const char *out_file_path = "img.mat";
-    // FILE *out = fopen(out_file_path, "wb");
-    // if (out == NULL) {
-    //     fprintf(stderr, "<Matrix Saving> ERROR: Could not open file %s!\n", out_file_path);
-    // }
-    // // mat_save( out, training_data);
-    // cout << "Generated " << out_file_path << " from " << img_file_path << "!\n";
+    string  storeLocation = "number.mat";
+    training_data.save(storeLocation);
 }
