@@ -19,14 +19,14 @@ void SoftMax(matrix<> &m) {
         exit(1);
     }
     float sum = 0;
-    for (int i = 0; i < m.getRows(); i++) {
-        for (int j = 0; j < m.getCols(); j++) {
+    for (unsigned i = 0; i < m.getRows(); i++) {
+        for (unsigned j = 0; j < m.getCols(); j++) {
             m.value(i, j) = expf(m.value(i, j));
             sum += m.value(i, j);
         }
     }
-    for (int i = 0; i < m.getRows(); i++) {
-        for (int j = 0; j < m.getCols(); j++) {
+    for (unsigned i = 0; i < m.getRows(); i++) {
+        for (unsigned j = 0; j < m.getCols(); j++) {
             m.value(i, j) /= sum;
         }
     }
@@ -39,13 +39,13 @@ int ArgMax(matrix<> &m) {
     }
     int ans = 0;
     if (m.getCols() == 1) {
-        for (int i = 0; i < m.getRows(); i++) {
+        for (unsigned i = 0; i < m.getRows(); i++) {
             if (m.value(ans, 0) < m.value(i, 0)) ans = i;
         }
         return ans;
     }
     if (m.getRows() == 1) {
-        for (int i = 0; i < m.getCols(); i++) {
+        for (unsigned i = 0; i < m.getCols(); i++) {
             if (m.value(0, ans) < m.value(0, i)) ans = i;
         }
         return ans;
@@ -57,7 +57,7 @@ int ArgMax(matrix<> &m) {
 
 class NeuralNetwork {
    private:
-    int count;
+    unsigned count;
     std::vector<float (*)(float)> activation_functions;
     //? <> means default parameters
     std::vector<matrix<>> weights;
@@ -66,7 +66,7 @@ class NeuralNetwork {
 
    public:
 
-    const float value(const std::string& option, int layer, int row, int col);
+    float value(const std::string& option, unsigned layer, unsigned row, unsigned col);
 
     /// @brief evaluates the cost / loss function based on the inout and the output
     /// @param trainingInput input data
@@ -129,7 +129,7 @@ label:
     this->activation_functions = std::vector<float (*)(float)>(this->count, functions::sigmoidf);
 
     this->activations[0] = matrix<>(1, architecture[0]);
-    for (int i = 1; i <= this->count; i++) {
+    for (unsigned i = 1; i <= this->count; i++) {
         this->weights[i - 1] = matrix(this->activations[i - 1].getCols(), architecture[i]);
         this->biases[i - 1] = matrix(1, architecture[i]);
         this->activations[i] = matrix(1, architecture[i]);
@@ -142,7 +142,7 @@ end:;
 
 void NeuralNetwork::print(const std::string &name) {
     std::cout << name << " = [" << std::endl;
-    for (int i = 0; i < this->count; i++) {
+    for (unsigned i = 0; i < this->count; i++) {
         this->activations[i].print("a[" + std::to_string(i) + "]", 4);
         this->weights[i].print("w[" + std::to_string(i) + "]", 4);
         this->biases[i].print("b[" + std::to_string(i) + "]", 4);
@@ -152,21 +152,21 @@ void NeuralNetwork::print(const std::string &name) {
 }
 
 void NeuralNetwork::randomise(const float &low, const float &high) {
-    for (int i = 0; i < this->count; i++) {
+    for (unsigned i = 0; i < this->count; i++) {
         this->weights[i].randomise(low, high);
         this->biases[i].randomise(low, high);
     }
 }
 
 void NeuralNetwork::forward() {
-    for (int i = 0; i < this->count; i++) {
+    for (unsigned i = 0; i < this->count; i++) {
         mat_dot(this->activations[i + 1], this->activations[i], this->weights[i]);
         mat_sum(this->activations[i + 1], this->activations[i + 1], this->biases[i]);
         this->activations[i + 1].apply(this->activation_functions[i]);
     }
 }
 
-const float NeuralNetwork::value(const std::string &option, int layer, int row, int col) {
+float NeuralNetwork::value(const std::string &option, unsigned layer, unsigned row, unsigned col) {
     if (layer >= count) {
         fprintf(stderr, "\e[31m<value>Layer index exceeded!\n\e[0m");
         throw std::runtime_error("\e[31m<value> Layer index exceeded!\n\e[0m");
@@ -226,16 +226,16 @@ float NeuralNetwork::cost(matrix<> &trainingInput, matrix<> &trainingOutput) {
         exit(1);
     }
     auto save = this->input();
-    int n = trainingInput.getRows();
+    unsigned n = trainingInput.getRows();
     float cost = 0;
-    for (int i = 0; i < n; i++) {
+    for (unsigned i = 0; i < n; i++) {
         matrix<> x = mat_row(trainingInput, i);
         matrix<> y = mat_row(trainingOutput, i);
 
         this->input().copy(x);
         this->forward();
-        int q = trainingOutput.getCols();
-        for (int j = 0; j < q; j++) {
+        unsigned q = trainingOutput.getCols();
+        for (unsigned j = 0; j < q; j++) {
             float diff = this->output().value(0, j) - y.value(0, j);
             cost += diff * diff;
         }
@@ -248,9 +248,9 @@ void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, matrix<> &ti
     float saved;
     float c = cost(ti, to);
 
-    for (int i = 0; i < this->count; i++) {
-        for (int j = 0; j < this->weights[i].getRows(); j++) {
-            for (int k = 0; k < this->weights[i].getCols(); k++) {
+    for (unsigned i = 0; i < this->count; i++) {
+        for (unsigned j = 0; j < this->weights[i].getRows(); j++) {
+            for (unsigned k = 0; k < this->weights[i].getCols(); k++) {
                 saved = this->weights[i].value(j, k);
 
                 this->weights[i].value(j, k) += eps;
@@ -261,8 +261,8 @@ void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, matrix<> &ti
             }
         }
 
-        for (int j = 0; j < this->biases[i].getRows(); j++) {
-            for (int k = 0; k < this->biases[i].getCols(); k++) {
+        for (unsigned j = 0; j < this->biases[i].getRows(); j++) {
+            for (unsigned k = 0; k < this->biases[i].getCols(); k++) {
                 saved = this->biases[i].value(j, k);
 
                 this->biases[i].value(j, k) += eps;
@@ -276,16 +276,16 @@ void NeuralNetwork::finite_diff(NeuralNetwork &g, const float &eps, matrix<> &ti
 }
 
 void NeuralNetwork::learn(NeuralNetwork &g, float rate) {
-    for (int i = 0; i < this->count; i++) {
-        for (int j = 0; j < this->weights[i].getRows(); j++) {
-            for (int k = 0; k < this->weights[i].getCols(); k++) {
+    for (unsigned i = 0; i < this->count; i++) {
+        for (unsigned j = 0; j < this->weights[i].getRows(); j++) {
+            for (unsigned k = 0; k < this->weights[i].getCols(); k++) {
                 this->weights[i].value(j, k) -= rate * g.weights[i].value(j, k);
             }
         }
     }
-    for (int i = 0; i < this->count; i++) {
-        for (int j = 0; j < this->biases[i].getRows(); j++) {
-            for (int k = 0; k < this->biases[i].getCols(); k++) {
+    for (unsigned i = 0; i < this->count; i++) {
+        for (unsigned j = 0; j < this->biases[i].getRows(); j++) {
+            for (unsigned k = 0; k < this->biases[i].getCols(); k++) {
                 this->biases[i].value(j, k) -= rate * g.biases[i].value(j, k);
             }
         }

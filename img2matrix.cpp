@@ -6,45 +6,51 @@
 #include "include/external/stb_image.h"
 using namespace std;
 
+typedef enum ErrorNo {
+    INPUT_NOT_GIVEN,
+    COULD_NOT_READ_IMAGE,
+    IMAGE_AINT_8_BITS,
+} ErrorNo;
+
 int main(int argc, char **argv) {
-
     if (argc <= 1) {
-        fprintf(stderr, "\e[31mUsage: %s <input.png>\n"
-                              "Error: No input file provided!\n\e[0m", argv[0]);
-        return 1;
+        cerr << "\e[31mUsage: " << argv[0] << " <input.png>\n"
+             << "Error: No input file provided!\n\e[0m";
+        return INPUT_NOT_GIVEN;
     }
-    const char *img_file_path = argv[1];
+    const char *imgFile = argv[1];
 
-    int img_width;
-    int img_height;
-    int img_components;
+    int imgWidth;
+    int imgHeight;
+    int imgComponents;
 
-    unsigned char *img_pixels = (unsigned char *)stbi_load(img_file_path, &img_width, &img_height, &img_components, 0);
+    unsigned char *img_pixels = (unsigned char *)stbi_load(imgFile, &imgWidth, &imgHeight, &imgComponents, 0);
     if (img_pixels == NULL) {
-        fprintf(stderr, "\e[31mError: Could not read image!\n%s\e[0m", img_file_path);
-        return 1;
+        cerr << "\e[31mError: Could not read image!\n"
+             << imgFile << "\e[0m";
+        return COULD_NOT_READ_IMAGE;
     }
-    if (img_components != 1) {
-        fprintf(stderr, "\e[31mError: %s is %d bits images!\nOnly 8 bit grayscale images are supported!\e[0m", img_file_path, img_components * 8);
-        return 1;
+    if (imgComponents != 1) {
+        cerr << "\e[31mError: " << imgFile << "is" << imgComponents * 8 << "bits images!\n"
+             << "Only 8 bit grayscale images are supported!\e[0m";
+        return IMAGE_AINT_8_BITS;
     }
-    cout << "\e[32m";
-    cout << "[INFO] File path: " << img_file_path << '\n';
-    cout << "[INFO] Size: " << img_width << "x" << img_height << '\n';
-    cout << "[INFO] Bits: " << img_components * 8 << " bits\n\e[0m";
+    cout << "\e[35m[INFO] File path: \e[33m" << imgFile << '\n';
+    cout << "\e[35m[INFO] Size: \e[33m" << imgWidth << "x" << imgHeight << '\n';
+    cout << "\e[35m[INFO] Bits: \e[33m" << imgComponents * 8 << " bits\n\e[0m";
 
-    matrix<> training_data(img_width * img_height, 3);  // x, y, intensity
+    matrix<> trainingData(imgWidth * imgHeight, 3);  // x, y, intensity
 
-    for (int y = 0; y < img_height; y++) {
-        for (int x = 0; x < img_width; x++) {
-            int i = y * img_width + x;
-            float normalized_x = float(x) / (img_width - 1);
-            float normalized_y = float(y) / (img_height - 1);
+    for (int y = 0; y < imgHeight; y++) {
+        for (int x = 0; x < imgWidth; x++) {
+            int i = y * imgWidth + x;
+            float normalized_x = float(x) / (imgWidth - 1);
+            float normalized_y = float(y) / (imgHeight - 1);
             float normalized_brightness = (float)img_pixels[i] / 255;
 
-            training_data.value(i, 0) = normalized_x;
-            training_data.value(i, 1) = normalized_y;
-            training_data.value(i, 2) = normalized_brightness;
+            trainingData.value(i, 0) = normalized_x;
+            trainingData.value(i, 1) = normalized_y;
+            trainingData.value(i, 2) = normalized_brightness;
             // if ((int)img_pixels[i] == 0)
             //     cout << setw(3) << " " << ' ';
             // else
@@ -52,7 +58,16 @@ int main(int argc, char **argv) {
         }
         // cout << '\n';
     }
-    MATRIX_PRINT(training_data);
-    string  storeLocation = "number.mat";
-    training_data.save(storeLocation);
+
+    // matrix<> ti(trainingData.getRows(), 2, trainingData.getCols(), &trainingData.value(0, 0));
+    // matrix<> to(trainingData.getRows(), 1, trainingData.getCols(), &trainingData.value(0, ti.getCols()));
+
+    // MATRIX_PRINT(trainingData);
+    // MATRIX_PRINT(ti);
+    // MATRIX_PRINT(to);
+    string storeLocation; // = "image.mat";
+    cout << "Enter path where to store the matrix: \n\e[33m";
+    getline(cin, storeLocation);
+    trainingData.save(storeLocation);
+    cout << "\e[32mGenerated " << storeLocation << " from " << imgFile << "!\n\e[0m";
 }

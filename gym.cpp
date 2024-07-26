@@ -11,12 +11,12 @@ using namespace functions;
 using namespace std;
 
 #define PRINT_FILES
-#define FPS 150
+#define FPS 1500
 #define RATE 1e-1
 #define EPSILLON 1e-1
 #define EPOCHS 20 * 1000
 const int screenWidth = 16 * 100;
-const int screenHeight = 10 * 100;
+const int screenHeight = 9 * 100;
 
 namespace parse {
 vector<float (*)(float)> parseActivationFunctions(string filepath) {
@@ -43,15 +43,15 @@ vector<float (*)(float)> parseActivationFunctions(string filepath) {
     return activationFunctions;
 }
 
-vector<int> parseArchitecture(string filepath) {
+vector<unsigned> parseArchitecture(string filepath) {
     ifstream file(filepath);
     if (!file.is_open()) {
         cout << "Could not open file" << endl;
         return {};
     }
 
-    vector<int> architecture;
-    int value;
+    vector<unsigned> architecture;
+    unsigned value;
     while (file >> value) {
         architecture.push_back(value);
     }
@@ -62,9 +62,9 @@ vector<int> parseArchitecture(string filepath) {
 }
 };  // namespace parse
 
-void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int rx, int ry, int rw, int rh) {
+void NN_render_raylib(NeuralNetwork &nn, const vector<unsigned> &arch, int rx, int ry, int rw, int rh) {
     Color backgroundColor = {0x18, 0x18, 0x18, 0xFF};  // greyish
-    Color lowColor = MAROON;
+    Color lowColor = RED;
     Color highColor = DARKBLUE;
 
     float neuronRadius = rh * 0.03;
@@ -75,21 +75,21 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int rx, int ry
     int nn_height = rh - 2 * layer_border_vpad;
     int nn_x = rx + rw / 2 - nn_width / 2;
     int nn_y = ry + rh / 2 - nn_height / 2;
-    for (int l = 0; l < arch.size(); l++) {
+    for (unsigned l = 0; l < arch.size(); l++) {
         int layer_vpad1 = nn_height / (arch[l]);
-        for (int j = 0; j < arch[l]; j++) {
+        for (unsigned j = 0; j < arch[l]; j++) {
             int cx1 = nn_x + l * layer_hpad + layer_hpad / 2;
             int cy1 = nn_y + j * layer_vpad1 + layer_vpad1 / 2;
             if (l + 1 < arch.size()) {
-                for (int k = 0; k < arch[l + 1]; k++) {
+                for (unsigned k = 0; k < arch[l + 1]; k++) {
                     int layer_vpad2 = nn_height / (arch[l + 1]);
                     int cx2 = nn_x + (l + 1) * layer_hpad + layer_hpad / 2;
                     int cy2 = nn_y + k * layer_vpad2 + layer_vpad2 / 2;
-                    Vector2 start = {cx1, cy1};
-                    Vector2 end = {cx2, cy2};
+                    Vector2 start = {(float)cx1, (float)cy1};
+                    Vector2 end = {(float)cx2, (float)cy2};
                     float value = sigmoidf(nn.value("weights", l, j, k));
                     highColor.a = floorf(255.0F * value);
-                    float thickness = rh * 0.01F * (sigmoidf(abs(nn.value("weights", l, j, k)))-0.35);
+                    float thickness = rh * 0.015F * (sigmoidf(abs(nn.value("weights", l, j, k)))-0.5);
                     DrawLineEx(start, end, thickness, ColorAlphaBlend(lowColor, highColor, WHITE));
                 }
             }
@@ -106,7 +106,7 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<int> &arch, int rx, int ry
 // need to write own validate for each problem
 void validate(NeuralNetwork &nn, matrix<> &ti, matrix<> &to) {
     int cnt = 0;
-    for (int i = 0; i < ti.getRows(); i++) {
+    for (unsigned i = 0; i < ti.getRows(); i++) {
         nn.input() = mat_row(ti, i);
         nn.forward();
         matrix<> output = nn.output();
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    vector<int> arch = parse::parseArchitecture(argv[1]);
+    vector<unsigned> arch = parse::parseArchitecture(argv[1]);
 
     if (arch.size() < 3) {
         fprintf(stderr, "\e[31m<GYM> Architecture does not contain hidden layers?\n\e[0m");
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE); // to make the window resize-able
     InitWindow(screenWidth, screenHeight, "Training sesh");
-    SetTargetFPS(75);
+    SetTargetFPS(FPS);
     // I guess these conditions are useless now!
     if (ti.getRows() != to.getRows()) {
         fprintf(stderr, "\e[31m<GYM> Number of samples in input and output do not match!\n\e[0m");
@@ -184,6 +184,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "\e[31m<GYM> Number of features in output and architecture do not match!\n\e[0m");
         return 1;
     }
+
 #ifdef PRINT_FILES
     {
         cout << "\nArchitecture: ";
@@ -234,9 +235,9 @@ int main(int argc, char *argv[]) {
             int rx, ry, rw, rh;
             
             rw = GetScreenWidth() / 2;
-            rh = GetScreenHeight() * 2 / 3;
-            rx = GetScreenWidth() - rw;
-            ry = GetScreenHeight() / 2 - rh / 2;
+            rh = GetScreenHeight() * 3 / 4;
+            rx = 0;
+            ry = 0;
 
             NN_render_raylib(nn, arch, rx, ry, rw, rh);
 

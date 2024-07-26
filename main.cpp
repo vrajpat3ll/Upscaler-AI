@@ -50,7 +50,7 @@ vector<unsigned> parseArchitecture(string filepath) {
     }
 
     vector<unsigned> architecture;
-    int value;
+    unsigned value;
     while (file >> value) {
         architecture.push_back(value);
     }
@@ -201,6 +201,8 @@ int main(int argc, char *argv[]) {
         cout << endl;
     }
 #endif
+
+    // system("img2mat.exe");
     MATRIX_PRINT(ti);
     MATRIX_PRINT(to);
     srand(time(0));
@@ -234,8 +236,8 @@ int main(int argc, char *argv[]) {
             
             rw = GetScreenWidth() / 2;
             rh = GetScreenHeight() * 2 / 3;
-            rx = GetScreenWidth() - rw;
-            ry = GetScreenHeight() / 2 - rh / 2;
+            rx = 0;
+            ry = 0;
 
             NN_render_raylib(nn, arch, rx, ry, rw, rh);
 
