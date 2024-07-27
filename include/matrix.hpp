@@ -295,7 +295,7 @@ bool matrix<T>::operator==(matrix<T>& other) {
     
     for (unsigned i = 0; i < m_rows; i++) {
         for (unsigned j = 0; j < m_cols; j++) {
-            if (this->value(i,j) != other.value(i,j)) return false;
+            if (this->value(i, j) != other.value(i, j)) return false;
         }
     }
     return true;
