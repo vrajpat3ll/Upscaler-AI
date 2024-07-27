@@ -104,7 +104,7 @@ class NeuralNetwork {
     /// @param trainingOutput output data
     void finite_diff(NeuralNetwork &g, const float &eps, matrix<> &trainingInput, matrix<> &trainingOutput);
 
-    // TODO: implement void backprop();
+    // TODO: implement void backpropagate(matrix<>& input, matrix<>& target);
 };
 
 #endif  // NN_H

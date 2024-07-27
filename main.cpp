@@ -4,18 +4,25 @@
  **/
 #include <bits/stdc++.h>
 
+#include "include/external/stb_image.h"
 #include "include/neural_network.hpp"
 #include "raylib.h"
 using namespace functions;
 using namespace std;
 
 #define PRINT_PARSED_INFO
-#define FPS 150
+#define FPS 1500
 #define RATE 1e-1
 #define EPSILLON 1e-1
 #define EPOCHS 20 * 1000
 const int screenWidth = 16 * 100;
 const int screenHeight = 9 * 100;
+
+typedef enum ErrorNo {
+    INPUT_NOT_GIVEN,
+    COULD_NOT_READ_IMAGE,
+    IMAGE_AINT_8_BITS,
+} ErrorNum;
 
 namespace parse {
 vector<float (*)(float)> parseActivationFunctions(string filepath) {
@@ -63,7 +70,7 @@ vector<unsigned> parseArchitecture(string filepath) {
 
 void NN_render_raylib(NeuralNetwork &nn, const vector<unsigned> &arch, int rx, int ry, int rw, int rh) {
     Color backgroundColor = {0x18, 0x18, 0x18, 0xFF};  // greyish
-    Color lowColor = MAROON;
+    Color lowColor = RED;
     Color highColor = DARKBLUE;
 
     float neuronRadius = rh * 0.03;
@@ -74,28 +81,28 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<unsigned> &arch, int rx, i
     int nn_height = rh - 2 * layer_border_vpad;
     int nn_x = rx + rw / 2 - nn_width / 2;
     int nn_y = ry + rh / 2 - nn_height / 2;
-    for (int l = 0; l < arch.size(); l++) {
+    for (unsigned l = 0; l < arch.size(); l++) {
         int layer_vpad1 = nn_height / (arch[l]);
-        for (int j = 0; j < arch[l]; j++) {
+        for (unsigned j = 0; j < arch[l]; j++) {
             int cx1 = nn_x + l * layer_hpad + layer_hpad / 2;
             int cy1 = nn_y + j * layer_vpad1 + layer_vpad1 / 2;
             if (l + 1 < arch.size()) {
-                for (int k = 0; k < arch[l + 1]; k++) {
+                for (unsigned k = 0; k < arch[l + 1]; k++) {
                     int layer_vpad2 = nn_height / (arch[l + 1]);
                     int cx2 = nn_x + (l + 1) * layer_hpad + layer_hpad / 2;
                     int cy2 = nn_y + k * layer_vpad2 + layer_vpad2 / 2;
-                    Vector2 start = {cx1, cy1};
-                    Vector2 end = {cx2, cy2};
+                    Vector2 start = {(float)cx1, (float)cy1};
+                    Vector2 end = {(float)cx2, (float)cy2};
                     float value = sigmoidf(nn.value("weights", l, j, k));
                     highColor.a = floorf(255.0F * value);
-                    float thickness = rh * 0.01F * (sigmoidf(abs(nn.value("weights", l, j, k)))-0.35);
+                    float thickness = rh * 0.015F * (sigmoidf(abs(nn.value("weights", l, j, k))) - 0.5);
                     DrawLineEx(start, end, thickness, ColorAlphaBlend(lowColor, highColor, WHITE));
                 }
             }
             if (l > 0) {
                 highColor.a = floor(255.0F * sigmoidf(nn.value("biases", l - 1, 0, j)));
                 DrawCircle(cx1, cy1, neuronRadius, ColorAlphaBlend(lowColor, highColor, WHITE));
-            } else 
+            } else
                 DrawCircle(cx1, cy1, neuronRadius, GRAY);
         }
     }
@@ -105,45 +112,89 @@ void NN_render_raylib(NeuralNetwork &nn, const vector<unsigned> &arch, int rx, i
 // need to write own validate for each problem
 void validate(NeuralNetwork &nn, matrix<> &ti, matrix<> &to) {
     int cnt = 0;
-    for (int i = 0; i < ti.getRows(); i++) {
+    for (unsigned i = 0; i < ti.getRows(); i++) {
         nn.input() = mat_row(ti, i);
         nn.forward();
         matrix<> output = nn.output();
-        std::cout << ti.value(i, 0) << " ^ " << ti.value(i, 1) << " = " << nn.output().value(0, 0) << endl;
-        output.apply(round);
         matrix<> expected = mat_row(to, i);
+        output.apply(round);
+        expected.apply(round);
+        if (output.value(0, 0) != expected.value(0, 0))
+            cout << ti.value(i, 0) << " ^ " << ti.value(i, 1) << " = " << nn.output().value(0, 0) << endl;
         if (output == expected) cnt++;
     }
 
     float accuracy = (float)cnt / ti.getRows() * 100;
-    std::cout << "accuracy: " << accuracy << "%" << std::endl;
+    cout << "accuracy: " << accuracy << "%" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout << "\e[31mUsage: gym ";
+        cout << "\e[31mUsage: upscale ";
+        cout << "<filepath to image> ";
         cout << "<filepath to architecture> ";
-        cout << "<filepath to activation functions> "; 
-        cout << "<filepath to training data> \e[0m";
-        return -1;
+        cout << "<filepath to activation functions> ";
+        cout << "<filepath to training data>\e[0m";
+        return INPUT_NOT_GIVEN;
     }
+    const char *imgFile = argv[1];
 
-    vector<unsigned> arch = parse::parseArchitecture(argv[1]);
+    int imgWidth;
+    int imgHeight;
+    int imgComponents;
+
+    unsigned char *img_pixels = (unsigned char *)stbi_load(imgFile, &imgWidth, &imgHeight, &imgComponents, 0);
+    if (img_pixels == NULL) {
+        cerr << "\e[31mError: Could not read image!\n"
+             << imgFile << "\e[0m";
+        return COULD_NOT_READ_IMAGE;
+    }
+    if (imgComponents != 1) {
+        cerr << "\e[31mError: " << imgFile << "is" << imgComponents * 8 << "bits images!\n"
+             << "Only 8 bit grayscale images are supported!\e[0m";
+        return IMAGE_AINT_8_BITS;
+    }
+    cout << "\e[35m[INFO] File path: \e[33m" << imgFile << '\n';
+    cout << "\e[35m[INFO] Size: \e[33m" << imgWidth << "x" << imgHeight << '\n';
+    cout << "\e[35m[INFO] Bits: \e[33m" << imgComponents * 8 << " bits\n\e[0m";
+
+    matrix<> trainingData(imgWidth * imgHeight, 3);  // x, y, intensity
+
+    for (int y = 0; y < imgHeight; y++) {
+        for (int x = 0; x < imgWidth; x++) {
+            int i = y * imgWidth + x;
+            float normalized_x = float(x) / (imgWidth - 1);
+            float normalized_y = float(y) / (imgHeight - 1);
+            float normalized_brightness = (float)img_pixels[i] / 255;
+
+            trainingData.value(i, 0) = normalized_x;
+            trainingData.value(i, 1) = normalized_y;
+            trainingData.value(i, 2) = normalized_brightness;
+        }
+    }
+    string storeLocation;  // = "image.mat";
+    cout << "Enter path where to store the matrix: \n\e[33m";
+    getline(cin, storeLocation);
+    trainingData.save(storeLocation);
+    cout << "\e[0m";
+    cout << "\e[32mGenerated " << storeLocation << " from " << imgFile << "!\n\e[0m";
+
+    vector<unsigned> arch = parse::parseArchitecture(argv[2]);
 
     if (arch.size() < 3) {
         fprintf(stderr, "\e[31m<GYM> Architecture does not contain hidden layers?\n\e[0m");
         return 1;
     }
     vector<float (*)(float)> acFs;
-    if (argc < 3) {
+    if (argc < 4) {
         acFs = {};
     } else {
-        acFs = parse::parseActivationFunctions(argv[2]);
+        acFs = parse::parseActivationFunctions(argv[3]);
     }
-    
+
     std::string data;
-    if (argc == 4) {
-        data = argv[3];
+    if (argc == 5) {
+        data = argv[4];
     } else {
         std::cout << "Enter path for data (.mat format):\n";
         getline(cin, data);
@@ -154,20 +205,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     f.close();
-    
-    matrix t;
-    t.load(data);
-    if (arch[0] + arch.back() != t.getCols()) {
-        fprintf(stderr, "\e[31m<Check> architecture and data's dimensions do not match!\n"
-                               "architecture[0]    = %d\n"
-                               "architecture[last] = %d\n"
-                               "trainingData.cols  = %d\e[0m", arch[0], arch.back(), t.getCols());
+
+    // matrix t;
+    // t.load(data);
+    if (arch[0] + arch.back() != trainingData.getCols()) {
+        fprintf(stderr,
+                "\e[31m<Check> architecture and data's dimensions do not match!\n"
+                "architecture[0]    = %d\n"
+                "architecture[last] = %d\n"
+                "trainingData.cols  = %d\e[0m",
+                arch[0], arch.back(), trainingData.getCols());
         return 1;
     }
-    matrix<> ti (t.getRows(), arch[0], t.getCols(), &t.value(0, 0));
-    matrix<> to (t.getRows(), arch.back(), t.getCols(), &t.value(0, arch[0]));
+    matrix<> ti(trainingData.getRows(), arch[0], trainingData.getCols(), &trainingData.value(0, 0));
+    matrix<> to(trainingData.getRows(), arch.back(), trainingData.getCols(), &trainingData.value(0, arch[0]));
 
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE); // to make the window resize-able
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);  // to make the window resize-able
     InitWindow(screenWidth, screenHeight, "Training sesh");
     SetTargetFPS(FPS);
     // I guess these conditions are useless now!
@@ -201,8 +254,6 @@ int main(int argc, char *argv[]) {
         cout << endl;
     }
 #endif
-
-    // system("img2mat.exe");
     MATRIX_PRINT(ti);
     MATRIX_PRINT(to);
     srand(time(0));
@@ -213,8 +264,8 @@ int main(int argc, char *argv[]) {
     int epoch = 1;
 
     bool pause = true;
+    float lastCost = 0;
     while (!WindowShouldClose()) {
-        
         if (epoch <= EPOCHS && !pause) {
             nn.finite_diff(g, EPSILLON, ti, to);
             nn.learn(g, RATE);
@@ -233,16 +284,19 @@ int main(int argc, char *argv[]) {
         BeginDrawing();
         {
             int rx, ry, rw, rh;
-            
+
             rw = GetScreenWidth() / 2;
-            rh = GetScreenHeight() * 2 / 3;
+            rh = GetScreenHeight() * 3 / 4;
             rx = 0;
             ry = 0;
 
             NN_render_raylib(nn, arch, rx, ry, rw, rh);
 
             string epoc = "epoch: " + to_string(epoch) + " / " + to_string(EPOCHS);
-            string cost = "cost: " + to_string(nn.cost(ti, to));
+            if (epoch % 50 == 0) {
+                lastCost = nn.cost(ti, to);
+            }
+            string cost = "cost: " + to_string(lastCost);
             DrawText(epoc.c_str(), 0, 0, 24, WHITE);
             DrawText(cost.c_str(), GetScreenWidth() / 2, 0, 24, WHITE);
             string fps = "FPS: " + to_string(GetFPS());
@@ -253,9 +307,20 @@ int main(int argc, char *argv[]) {
     cout << "\e[19;1H";
     CloseWindow();
     cout << "\n";
-    nn.print("Neural Network");
+    // nn.print("Neural Network");
 
-    validate(nn, ti, to);
+    // validate(nn, ti, to);
+    for (unsigned y = 0; y < imgHeight; y++) {
+        for (int x = 0; x < imgWidth; x++) {
+            nn.input().value(0, 0) = (float)x / (ti.getRows() - 1);
+            nn.input().value(0, 1) = (float)y / (ti.getRows() - 1);
+            nn.forward();
+            unsigned pixel = 255 * nn.output().value(0, 0);
+            printf("%3u ", pixel);
+        }
+        cout << endl;
+    }
+
     // nn.save("filename");
     return 0;
 }
