@@ -20,5 +20,5 @@ set raylibInclude=-IC:/addtional-libs/raylib-5.0_win64_mingw-w64/include/ -LC:/a
 @REM %COMPILER% %CFLAGS% "./img2matrix.cpp" %CLIBS% -o "./debug/img2mat"
 @REM "./debug/img2mat" "mnist\train\100.png"
 
-%COMPILER% %CFLAGS% "./main.cpp" %CLIBS% -o "./imgTest" %raylibInclude%
-"./imgTest" "mnist/train/100.png" "./network.arch" "./layers.functions" "img.mat"
+%COMPILER% %CFLAGS% "./main.cpp" %CLIBS% -o "./debug/imgTest1-sativkChainDemo" %raylibInclude%
+"./debug/imgTest1-sativkChainDemo" "mnist/train/100.png" "./network.arch" "./layers.functions" "img.mat"

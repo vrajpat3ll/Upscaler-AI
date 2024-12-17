@@ -5,6 +5,8 @@
 #define MATRIX_IMPLEMENTATION
 #include "matrix.hpp"
 
+#define DEBUG true
+
 namespace functions {
 
 float sigmoidf(float x) {
@@ -55,8 +57,7 @@ int ArgMax(matrix<> &m) {
 float derivative(float (*function)(float), float a) {
     if (function == functions::sigmoidf) {
         return function(a) * (1 - function(a));
-    } else
-    if (function == functions::ReLU) {
+    } else if (function == functions::ReLU) {
         return a >= 0;
     }
     return 0;
@@ -73,8 +74,7 @@ class NeuralNetwork {
     std::vector<matrix<>> activations;  // count + 1 activations
 
    public:
-
-    float& value(const std::string& option, unsigned layer, unsigned row, unsigned col);
+    float &value(const std::string &option, unsigned layer, unsigned row, unsigned col);
 
     /// @brief evaluates the cost / loss function based on the inout and the output
     /// @param trainingInput input data
@@ -112,7 +112,9 @@ class NeuralNetwork {
     /// @param trainingOutput output data
     void finite_diff(NeuralNetwork &g, const float &eps, matrix<> &trainingInput, matrix<> &trainingOutput);
 
-    // TODO: implement void backpropagate(matrix<>& input, matrix<>& target);
+    // TODO: implement
+    void backpropagate(NeuralNetwork &g, matrix<> &input, matrix<> &target);
+    friend void nn_zero(NeuralNetwork &nn);
 };
 
 #endif  // NN_H
@@ -174,54 +176,51 @@ void NeuralNetwork::forward() {
     }
 }
 
-float& NeuralNetwork::value(const std::string &option, unsigned layer, unsigned row, unsigned col) {
+float &NeuralNetwork::value(const std::string &option, unsigned layer, unsigned row, unsigned col) {
     std::string log;
     if (layer >= count) {
         log = "\e[31m<value> Layer index exceeded!\n\e[0m";
         fprintf(stderr, log.c_str());
         throw std::runtime_error(log);
     }
-    if (option == "weights"){
-        if(row >= this->weights[layer].getRows()){ 
-            log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+    if (option == "weights") {
+        if (row >= this->weights[layer].getRows()) {
+            log = "\e[31m<value> Weights at layer " + std::to_string(layer) + " exceeded row count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
-        if(col >= this->weights[layer].getCols()){ 
-            log = "\e[31m<value>Weights at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+        if (col >= this->weights[layer].getCols()) {
+            log = "\e[31m<value> Weights at layer " + std::to_string(layer) + " exceeded col count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
         return this->weights[layer].value(row, col);
-    }
-    else if (option == "biases"){
-        if(row >= this->biases[layer].getRows()){ 
-            log = "\e[31m<value> Biases at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+    } else if (option == "biases") {
+        if (row >= this->biases[layer].getRows()) {
+            log = "\e[31m<value> Biases at layer " + std::to_string(layer) + " exceeded row count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
-        if(col >= this->biases[layer].getCols()){ 
-            log = "\e[31m<value> Biases at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+        if (col >= this->biases[layer].getCols()) {
+            log = "\e[31m<value> Biases at layer " + std::to_string(layer) + " exceeded col count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
         return this->biases[layer].value(row, col);
-    }
-    else if (option == "activations"){
-        if(row >= this->activations[layer].getRows()){ 
-            log = "\e[31m<value> Activations at layer "+std::to_string(layer)+" exceeded row count!\n\e[0m";
+    } else if (option == "activations") {
+        if (row >= this->activations[layer].getRows()) {
+            log = "\e[31m<value> Activations at layer " + std::to_string(layer) + " exceeded row count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
-        if(col >= this->activations[layer].getCols()){ 
-            log = "\e[31m<value> Activations at layer "+std::to_string(layer)+" exceeded col count!\n\e[0m";
+        if (col >= this->activations[layer].getCols()) {
+            log = "\e[31m<value> Activations at layer " + std::to_string(layer) + " exceeded col count!\n\e[0m";
             fprintf(stderr, log.c_str());
             throw std::runtime_error(log);
         }
         return this->activations[layer].value(row, col);
-    }
-    else {
-        fprintf(stderr, "\e[31m<value>Wrong option given!\nChoose from \"weights\", \"biases\" and \"activations\"\n\e[0m");
+    } else {
+        fprintf(stderr, "\e[31m<value> Wrong option given!\nChoose from \"weights\", \"biases\" and \"activations\"\n\e[0m");
         throw std::runtime_error("\e[31m<value> Wrong option given!\nChoose from \"weights\", \"biases\" and \"activations\"\n\e[0m");
     }
 }
@@ -301,5 +300,75 @@ void NeuralNetwork::learn(NeuralNetwork &g, float rate) {
         }
     }
 }
+
+// void nn_zero(NeuralNetwork &nn) {
+//     for (size_t i = 0; i < nn.count; ++i) {
+//         nn.weights[i].fill(0);
+//         nn.biases[i].fill(0);
+//         nn.activations[i].fill(0);
+//     }
+//     nn.activations[nn.count].fill(0);
+// }
+
+// void NeuralNetwork::backpropagate(NeuralNetwork &g, matrix<> &input, matrix<> &target) {
+//     if (input.getRows() != target.getRows()) {
+//         std::cout << "" << std::endl;
+//         exit(1);
+//     };
+//     size_t n = input.getRows();
+//     if (this->output().getCols() != target.getCols()) {
+//         std::cout << "" << std::endl;
+//         exit(1);
+//     };
+
+//     nn_zero(g);
+
+//     // i - current sample
+//     // l - current layer
+//     // j - current activation
+//     // k - previous activation
+
+//     for (size_t i = 0; i < n; ++i) {
+//         this->input().copy(mat_row(input, i));
+//         this->forward();
+
+//         // for (size_t j = 0; j <= this->count; ++j) {
+//         //     mat_fill(g.as[j], 0);
+//         // }
+
+//         for (size_t j = 0; j < target.getCols(); ++j) {
+//             g.output().value(0, j) = this->output().value(0, j) - target.value(i, j);
+//         }
+
+//         for (size_t l = this->count; l > 0; --l) {
+//             for (size_t j = 0; j < this->activations[l].getCols(); ++j) {
+//                 float a = this->activations[l].value(0, j);
+//                 float da = g.activations[l].value(0, j);
+//                 g.biases[l - 1].value(0, j) += 2 * da * a * (1 - a);
+//                 for (size_t k = 0; k < this->activations[l - 1].getCols(); ++k) {
+//                     // j - weight matrix col
+//                     // k - weight matrix row
+//                     float pa = this->activations[l - 1].value(0, k);
+//                     float w = this->weights[l - 1].value(k, j);
+//                     g.weights[l - 1].value(k, j) += 2 * da * a * (1 - a) * pa;
+//                     g.activations[l - 1].value(0, k) += 2 * da * a * (1 - a) * w;
+//                 }
+//             }
+//         }
+//     }
+
+//     for (size_t i = 0; i < this->count; ++i) {
+//         for (size_t j = 0; j < g.weights[i].getRows(); ++j) {
+//             for (size_t k = 0; k < g.weights[i].getCols(); ++k) {
+//                 g.weights[i].value(j, k) /= n;
+//             }
+//         }
+//         for (size_t j = 0; j < g.biases[i].getRows(); ++j) {
+//             for (size_t k = 0; k < g.biases[i].getCols(); ++k) {
+//                 g.biases[i].value(j, k) /= n;
+//             }
+//         }
+//     }
+// }
 
 #endif  // NN_IMPLMENTATION

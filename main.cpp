@@ -12,11 +12,32 @@ using namespace std;
 
 #define PRINT_PARSED_INFO
 #define FPS 1500
-#define RATE 1e-1
+#define RATE 2.5
 #define EPSILLON 1e-1
-#define EPOCHS 20 * 1000
+#define EPOCHS 100 * 1000
 const int screenWidth = 16 * 100;
 const int screenHeight = 9 * 100;
+
+bool invalidName(string s) {
+    return s.size() < 4 || s.substr(s.size() - 4, 4) != ".mat";
+}
+
+void displayImage(NeuralNetwork &nn, unsigned imgHeight) {
+    ofstream image("image.txt");
+    // unsigned img_pixels[imgHeight*imgHeight];
+    for (unsigned y = 0; y < imgHeight; y++) {
+        for (int x = 0; x < imgHeight; x++) {
+            nn.input().value(0, 0) = (float)x / (imgHeight - 1);
+            nn.input().value(0, 1) = (float)y / (imgHeight - 1);
+            nn.forward();
+            unsigned pixel = 255 * nn.output().value(0, 0);
+            // img_pixels[y*imgHeight+x] = pixel;
+            image << setw(4) << pixel;
+        }
+        image << endl;
+    }
+    // DrawTexture(,)
+}
 
 typedef enum ErrorNo {
     INPUT_NOT_GIVEN,
@@ -170,11 +191,19 @@ int main(int argc, char *argv[]) {
             trainingData.value(i, 0) = normalized_x;
             trainingData.value(i, 1) = normalized_y;
             trainingData.value(i, 2) = normalized_brightness;
+            if (img_pixels[i])
+                cout << setw(4) << unsigned(img_pixels[i]);
+            else
+                cout << "    ";
         }
+        cout << endl;
     }
     string storeLocation;  // = "image.mat";
-    cout << "Enter path where to store the matrix: \n\e[33m";
-    getline(cin, storeLocation);
+    cout << "Enter path where to store the matrix: \e[33m";
+    do {
+        getline(cin, storeLocation);
+    } while (invalidName(storeLocation));
+
     trainingData.save(storeLocation);
     cout << "\e[0m";
     cout << "\e[32mGenerated " << storeLocation << " from " << imgFile << "!\n\e[0m";
@@ -242,20 +271,24 @@ int main(int argc, char *argv[]) {
         for (auto x : arch) cout << x << " ";
         cout << endl;
         cout << "Activations: ";
-        for (auto x : acFs) {
-            string name;
-            if (x == functions::ReLU)
-                name = "ReLU";
-            else if (x == functions::sigmoidf)
-                name = "sigmoidf";
+        if (acFs.size() == 0) {
+            for (int i = 0; i < arch.size() - 1; i++) cout << "sigmoidf ";
+        } else {
+            for (auto x : acFs) {
+                string name;
+                if (x == functions::ReLU)
+                    name = "ReLU";
+                else if (x == functions::sigmoidf)
+                    name = "sigmoidf";
 
-            cout << name << " ";
+                cout << name << " ";
+            }
         }
         cout << endl;
     }
 #endif
-    MATRIX_PRINT(ti);
-    MATRIX_PRINT(to);
+    // MATRIX_PRINT(ti);
+    // MATRIX_PRINT(to);
     srand(time(0));
     NeuralNetwork nn, g;
     nn.init(arch, acFs);
@@ -265,12 +298,21 @@ int main(int argc, char *argv[]) {
 
     bool pause = true;
     float lastCost = 0;
+    Image img;
+    int size = 28;
+    unsigned pixels[size * size];
+    img.height = size;
+    img.width = size;
+    img.mipmaps = 1;
+    img.format = 1;
     while (!WindowShouldClose()) {
         if (epoch <= EPOCHS && !pause) {
             nn.finite_diff(g, EPSILLON, ti, to);
             nn.learn(g, RATE);
-            if (epoch % 100 == 0)
+            if (epoch % 50 == 0) {
                 std::cout << "\e[18;1H" << epoch << ": \e[31m" << nn.cost(ti, to) << "\n\e[0m";
+                displayImage(nn, size);
+            }
             epoch++;
         }
         if (IsKeyPressed(KEY_R)) {
@@ -293,7 +335,7 @@ int main(int argc, char *argv[]) {
             NN_render_raylib(nn, arch, rx, ry, rw, rh);
 
             string epoc = "epoch: " + to_string(epoch) + " / " + to_string(EPOCHS);
-            if (epoch % 50 == 0) {
+            if (epoch % 5 == 0) {
                 lastCost = nn.cost(ti, to);
             }
             string cost = "cost: " + to_string(lastCost);
@@ -301,6 +343,22 @@ int main(int argc, char *argv[]) {
             DrawText(cost.c_str(), GetScreenWidth() / 2, 0, 24, WHITE);
             string fps = "FPS: " + to_string(GetFPS());
             DrawText(fps.c_str(), GetScreenWidth() - fps.size() * 13, 0, 24, WHITE);
+
+            // float scale = 521 / 28;
+            for (unsigned y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    nn.input().value(0, 0) = (float)x / (size - 1);
+                    nn.input().value(0, 1) = (float)y / (size - 1);
+                    nn.forward();
+                    unsigned pixel = 255 * nn.output().value(0, 0);
+                    pixels[y * size + x] = pixel;
+                    // image << setw(4) << pixel;
+                }
+                // image << endl;
+            }
+            img.data = pixels;            
+            Texture2D texture = LoadTextureFromImage(img);
+            DrawTexture(texture, rw, screenHeight/4, WHITE);
         }
         EndDrawing();
     }
@@ -315,7 +373,7 @@ int main(int argc, char *argv[]) {
             nn.input().value(0, 0) = (float)x / (ti.getRows() - 1);
             nn.input().value(0, 1) = (float)y / (ti.getRows() - 1);
             nn.forward();
-            unsigned pixel = 255 * nn.output().value(0, 0);
+            float pixel = 255 * nn.output().value(0, 0);
             printf("%3u ", pixel);
         }
         cout << endl;
